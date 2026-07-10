@@ -1,83 +1,83 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import os
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = 'chave_secreta_flask_2024'
+app.secret_key = os.environ.get('SECRET_KEY', 'chave_secreta_flask_2024')
 
-# ─── Banco de Dados ───────────────────────────────────────────────────────────
+# --- Banco de Dados (PostgreSQL) ---
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 def get_db():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     return conn
 
 def init_db():
     conn = get_db()
-    conn.execute('''
+    cur = conn.cursor()
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nome TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             senha TEXT NOT NULL
         )
     ''')
-    conn.execute('''
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS tarefas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             titulo TEXT NOT NULL,
             descricao TEXT,
             status TEXT DEFAULT 'pendente',
-            usuario_id INTEGER NOT NULL,
-            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+            usuario_id INTEGER NOT NULL REFERENCES usuarios(id)
         )
     ''')
     conn.commit()
+    cur.close()
     conn.close()
 
-# ─── Decorador de Autenticação ────────────────────────────────────────────────
+# --- Decorador de Autenticacao ---
 
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'usuario_id' not in session:
-            flash('Faça login para acessar esta página.', 'warning')
+            flash('Faca login para acessar esta pagina.', 'warning')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
 
-# ─── Dica do Dia (sistema interno, 100% em português) ────────────────────────
-# Lista de frases motivacionais fixas. Uma frase diferente é escolhida
-# automaticamente a cada dia, mas permanece a mesma durante todo o dia,
-# mesmo que a página seja recarregada várias vezes.
+# --- Dica do Dia (sistema interno, 100% em portugues) ---
 
 FRASES_DO_DIA = [
-    "A jornada de mil quilômetros começa com um único passo.",
-    "O sucesso é a soma de pequenos esforços repetidos dia após dia.",
-    "Não espere por uma crise para descobrir o que é importante na sua vida.",
-    "A disciplina é a ponte entre metas e realizações.",
-    "Cada tarefa concluída é um passo mais perto do seu objetivo.",
-    "Organização não é um talento, é um hábito que se constrói.",
-    "Faça hoje o que outros não querem fazer; amanhã você terá o que outros não têm.",
-    "O foco de hoje constrói a vitória de amanhã.",
-    "Produtividade é fazer escolhas inteligentes sobre onde investir seu tempo.",
-    "Pequenos progressos diários levam a grandes resultados.",
-    "Comece onde você está, use o que você tem, faça o que você pode.",
-    "A persistência realiza o impossível.",
-    "Planejar é trazer o futuro para o presente, para que você possa agir agora.",
-    "Quem tem um propósito forte suporta quase qualquer método.",
-    "Grandes conquistas exigem tempo, paciência e organização.",
-    "Você não precisa ser perfeito, só precisa ser consistente.",
+    "A jornada de mil quilometros comeca com um unico passo.",
+    "O sucesso e a soma de pequenos esforcos repetidos dia apos dia.",
+    "Nao espere por uma crise para descobrir o que e importante na sua vida.",
+    "A disciplina e a ponte entre metas e realizacoes.",
+    "Cada tarefa concluida e um passo mais perto do seu objetivo.",
+    "Organizacao nao e um talento, e um habito que se constroi.",
+    "Faca hoje o que outros nao querem fazer; amanha voce tera o que outros nao tem.",
+    "O foco de hoje constroi a vitoria de amanha.",
+    "Produtividade e fazer escolhas inteligentes sobre onde investir seu tempo.",
+    "Pequenos progressos diarios levam a grandes resultados.",
+    "Comece onde voce esta, use o que voce tem, faca o que voce pode.",
+    "A persistencia realiza o impossivel.",
+    "Planejar e trazer o futuro para o presente, para que voce possa agir agora.",
+    "Quem tem um proposito forte suporta quase qualquer metodo.",
+    "Grandes conquistas exigem tempo, paciencia e organizacao.",
+    "Voce nao precisa ser perfeito, so precisa ser consistente.",
     "A clareza sobre o que fazer hoje nasce de um bom planejamento.",
-    "Cada passo pequeno conta quando você está construindo algo grande.",
-    "Termine o que começou: a sensação de dever cumprido não tem preço.",
-    "O segredo de progredir é começar.",
+    "Cada passo pequeno conta quando voce esta construindo algo grande.",
+    "Termine o que comecou: a sensacao de dever cumprido nao tem preco.",
+    "O segredo de progredir e comecar.",
 ]
 
-DICA_PADRAO = "Continue firme: cada tarefa concluída é uma vitória conquistada."
+DICA_PADRAO = "Continue firme: cada tarefa concluida e uma vitoria conquistada."
 
 def obter_dica_do_dia():
     """Retorna a frase motivacional do dia, sempre a mesma durante 24h."""
@@ -87,7 +87,7 @@ def obter_dica_do_dia():
     except Exception:
         return DICA_PADRAO
 
-# ─── Rotas de Autenticação ────────────────────────────────────────────────────
+# --- Rotas de Autenticacao ---
 
 @app.route('/')
 def index():
@@ -101,16 +101,20 @@ def registro():
         nome = request.form['nome'].strip()
         email = request.form['email'].strip().lower()
         senha = generate_password_hash(request.form['senha'])
+        conn = get_db()
+        cur = conn.cursor()
         try:
-            conn = get_db()
-            conn.execute('INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)',
-                         (nome, email, senha))
+            cur.execute('INSERT INTO usuarios (nome, email, senha) VALUES (%s, %s, %s)',
+                        (nome, email, senha))
             conn.commit()
-            conn.close()
-            flash('Conta criada com sucesso! Faça login para continuar.', 'success')
+            flash('Conta criada com sucesso! Faca login para continuar.', 'success')
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
-            flash('Este e-mail já está cadastrado.', 'danger')
+        except psycopg2.IntegrityError:
+            conn.rollback()
+            flash('Este e-mail ja esta cadastrado.', 'danger')
+        finally:
+            cur.close()
+            conn.close()
     return render_template('registro.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -119,7 +123,10 @@ def login():
         email = request.form['email'].strip().lower()
         senha = request.form['senha']
         conn = get_db()
-        usuario = conn.execute('SELECT * FROM usuarios WHERE email = ?', (email,)).fetchone()
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM usuarios WHERE email = %s', (email,))
+        usuario = cur.fetchone()
+        cur.close()
         conn.close()
         if usuario and check_password_hash(usuario['senha'], senha):
             session['usuario_id'] = usuario['id']
@@ -131,19 +138,22 @@ def login():
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('Você saiu com sucesso.', 'info')
+    flash('Voce saiu com sucesso.', 'info')
     return redirect(url_for('login'))
 
-# ─── Dashboard ────────────────────────────────────────────────────────────────
+# --- Dashboard ---
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
     conn = get_db()
-    tarefas = conn.execute(
-        'SELECT * FROM tarefas WHERE usuario_id = ? ORDER BY id DESC',
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT * FROM tarefas WHERE usuario_id = %s ORDER BY id DESC',
         (session['usuario_id'],)
-    ).fetchall()
+    )
+    tarefas = cur.fetchall()
+    cur.close()
     conn.close()
 
     dica = obter_dica_do_dia()
@@ -154,14 +164,14 @@ def dashboard():
     concluidas = sum(1 for t in tarefas if t['status'] == 'concluida')
 
     return render_template('dashboard.html',
-                           tarefas=tarefas,
-                           dica=dica,
-                           total=total,
-                           pendentes=pendentes,
-                           em_andamento=em_andamento,
-                           concluidas=concluidas)
+        tarefas=tarefas,
+        dica=dica,
+        total=total,
+        pendentes=pendentes,
+        em_andamento=em_andamento,
+        concluidas=concluidas)
 
-# ─── Atualização de status via AJAX (sem recarregar a página) ────────────────
+# --- Atualizacao de status via AJAX ---
 
 @app.route('/tarefas/status/<int:id>', methods=['POST'])
 @login_required
@@ -171,28 +181,32 @@ def atualizar_status(id):
     status_validos = ('pendente', 'em_andamento', 'concluida')
 
     if novo_status not in status_validos:
-        return jsonify({'sucesso': False, 'mensagem': 'Status inválido.'}), 400
+        return jsonify({'sucesso': False, 'mensagem': 'Status invalido.'}), 400
 
     conn = get_db()
-    tarefa = conn.execute(
-        'SELECT id FROM tarefas WHERE id = ? AND usuario_id = ?',
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT id FROM tarefas WHERE id = %s AND usuario_id = %s',
         (id, session['usuario_id'])
-    ).fetchone()
+    )
+    tarefa = cur.fetchone()
 
     if not tarefa:
+        cur.close()
         conn.close()
-        return jsonify({'sucesso': False, 'mensagem': 'Tarefa não encontrada.'}), 404
+        return jsonify({'sucesso': False, 'mensagem': 'Tarefa nao encontrada.'}), 404
 
-    conn.execute(
-        'UPDATE tarefas SET status = ? WHERE id = ? AND usuario_id = ?',
+    cur.execute(
+        'UPDATE tarefas SET status = %s WHERE id = %s AND usuario_id = %s',
         (novo_status, id, session['usuario_id'])
     )
     conn.commit()
+    cur.close()
     conn.close()
 
     return jsonify({'sucesso': True, 'status': novo_status, 'mensagem': 'Status atualizado!'})
 
-# ─── CRUD de Tarefas ──────────────────────────────────────────────────────────
+# --- CRUD de Tarefas ---
 
 @app.route('/tarefas/nova', methods=['GET', 'POST'])
 @login_required
@@ -201,11 +215,13 @@ def nova_tarefa():
         titulo = request.form['titulo'].strip()
         descricao = request.form['descricao'].strip()
         conn = get_db()
-        conn.execute(
-            'INSERT INTO tarefas (titulo, descricao, usuario_id) VALUES (?, ?, ?)',
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO tarefas (titulo, descricao, usuario_id) VALUES (%s, %s, %s)',
             (titulo, descricao, session['usuario_id'])
         )
         conn.commit()
+        cur.close()
         conn.close()
         flash('Tarefa criada com sucesso!', 'success')
         return redirect(url_for('dashboard'))
@@ -215,26 +231,31 @@ def nova_tarefa():
 @login_required
 def editar_tarefa(id):
     conn = get_db()
-    tarefa = conn.execute(
-        'SELECT * FROM tarefas WHERE id = ? AND usuario_id = ?',
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT * FROM tarefas WHERE id = %s AND usuario_id = %s',
         (id, session['usuario_id'])
-    ).fetchone()
+    )
+    tarefa = cur.fetchone()
     if not tarefa:
+        cur.close()
         conn.close()
-        flash('Tarefa não encontrada.', 'danger')
+        flash('Tarefa nao encontrada.', 'danger')
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         titulo = request.form['titulo'].strip()
         descricao = request.form['descricao'].strip()
         status = request.form['status']
-        conn.execute(
-            'UPDATE tarefas SET titulo=?, descricao=?, status=? WHERE id=?',
+        cur.execute(
+            'UPDATE tarefas SET titulo=%s, descricao=%s, status=%s WHERE id=%s',
             (titulo, descricao, status, id)
         )
         conn.commit()
+        cur.close()
         conn.close()
         flash('Tarefa atualizada com sucesso!', 'success')
         return redirect(url_for('dashboard'))
+    cur.close()
     conn.close()
     return render_template('editar_tarefa.html', tarefa=tarefa)
 
@@ -242,49 +263,56 @@ def editar_tarefa(id):
 @login_required
 def deletar_tarefa(id):
     conn = get_db()
-    conn.execute(
-        'DELETE FROM tarefas WHERE id = ? AND usuario_id = ?',
+    cur = conn.cursor()
+    cur.execute(
+        'DELETE FROM tarefas WHERE id = %s AND usuario_id = %s',
         (id, session['usuario_id'])
     )
     conn.commit()
+    cur.close()
     conn.close()
     flash('Tarefa removida com sucesso.', 'info')
     return redirect(url_for('dashboard'))
 
-
-# ─── API REST — Tarefas em JSON (Desafio Avançado) ───────────────────────────
+# --- API REST - Tarefas em JSON ---
 
 @app.route('/api/tarefas', methods=['GET'])
 @login_required
 def api_listar_tarefas():
-    """Retorna todas as tarefas do usuário logado em JSON."""
+    """Retorna todas as tarefas do usuario logado em JSON."""
     status_filtro = request.args.get('status')
     conn = get_db()
+    cur = conn.cursor()
     if status_filtro and status_filtro in ('pendente', 'em_andamento', 'concluida'):
-        tarefas = conn.execute(
-            'SELECT * FROM tarefas WHERE usuario_id = ? AND status = ? ORDER BY id DESC',
+        cur.execute(
+            'SELECT * FROM tarefas WHERE usuario_id = %s AND status = %s ORDER BY id DESC',
             (session['usuario_id'], status_filtro)
-        ).fetchall()
+        )
     else:
-        tarefas = conn.execute(
-            'SELECT * FROM tarefas WHERE usuario_id = ? ORDER BY id DESC',
+        cur.execute(
+            'SELECT * FROM tarefas WHERE usuario_id = %s ORDER BY id DESC',
             (session['usuario_id'],)
-        ).fetchall()
+        )
+    tarefas = cur.fetchall()
+    cur.close()
     conn.close()
     return jsonify([dict(t) for t in tarefas])
 
 @app.route('/api/tarefas/<int:id>', methods=['GET'])
 @login_required
 def api_obter_tarefa(id):
-    """Retorna uma tarefa específica em JSON."""
+    """Retorna uma tarefa especifica em JSON."""
     conn = get_db()
-    tarefa = conn.execute(
-        'SELECT * FROM tarefas WHERE id = ? AND usuario_id = ?',
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT * FROM tarefas WHERE id = %s AND usuario_id = %s',
         (id, session['usuario_id'])
-    ).fetchone()
+    )
+    tarefa = cur.fetchone()
+    cur.close()
     conn.close()
     if not tarefa:
-        return jsonify({'erro': 'Tarefa não encontrada.'}), 404
+        return jsonify({'erro': 'Tarefa nao encontrada.'}), 404
     return jsonify(dict(tarefa))
 
 @app.route('/api/tarefas', methods=['POST'])
@@ -295,45 +323,55 @@ def api_criar_tarefa():
     titulo = (dados.get('titulo') or '').strip()
     descricao = (dados.get('descricao') or '').strip()
     if not titulo:
-        return jsonify({'sucesso': False, 'mensagem': 'O título é obrigatório.'}), 400
+        return jsonify({'sucesso': False, 'mensagem': 'O titulo e obrigatorio.'}), 400
     conn = get_db()
-    cursor = conn.execute(
-        'INSERT INTO tarefas (titulo, descricao, usuario_id) VALUES (?, ?, ?)',
+    cur = conn.cursor()
+    cur.execute(
+        'INSERT INTO tarefas (titulo, descricao, usuario_id) VALUES (%s, %s, %s) RETURNING id',
         (titulo, descricao, session['usuario_id'])
     )
+    novo_id = cur.fetchone()['id']
     conn.commit()
-    tarefa = conn.execute('SELECT * FROM tarefas WHERE id = ?', (cursor.lastrowid,)).fetchone()
+    cur.execute('SELECT * FROM tarefas WHERE id = %s', (novo_id,))
+    tarefa = cur.fetchone()
+    cur.close()
     conn.close()
     return jsonify({'sucesso': True, 'tarefa': dict(tarefa)}), 201
 
 @app.route('/api/tarefas/<int:id>', methods=['PUT'])
 @login_required
 def api_atualizar_tarefa(id):
-    """Atualiza título, descrição e/ou status via JSON."""
+    """Atualiza titulo, descricao e/ou status via JSON."""
     dados = request.get_json(silent=True) or {}
     conn = get_db()
-    tarefa = conn.execute(
-        'SELECT * FROM tarefas WHERE id = ? AND usuario_id = ?',
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT * FROM tarefas WHERE id = %s AND usuario_id = %s',
         (id, session['usuario_id'])
-    ).fetchone()
+    )
+    tarefa = cur.fetchone()
     if not tarefa:
+        cur.close()
         conn.close()
-        return jsonify({'sucesso': False, 'mensagem': 'Tarefa não encontrada.'}), 404
+        return jsonify({'sucesso': False, 'mensagem': 'Tarefa nao encontrada.'}), 404
 
     titulo = (dados.get('titulo') or tarefa['titulo']).strip()
     descricao = (dados.get('descricao') if dados.get('descricao') is not None else tarefa['descricao'] or '').strip()
     status = dados.get('status') or tarefa['status']
 
     if status not in ('pendente', 'em_andamento', 'concluida'):
+        cur.close()
         conn.close()
-        return jsonify({'sucesso': False, 'mensagem': 'Status inválido.'}), 400
+        return jsonify({'sucesso': False, 'mensagem': 'Status invalido.'}), 400
 
-    conn.execute(
-        'UPDATE tarefas SET titulo=?, descricao=?, status=? WHERE id=?',
+    cur.execute(
+        'UPDATE tarefas SET titulo=%s, descricao=%s, status=%s WHERE id=%s',
         (titulo, descricao, status, id)
     )
     conn.commit()
-    tarefa = conn.execute('SELECT * FROM tarefas WHERE id = ?', (id,)).fetchone()
+    cur.execute('SELECT * FROM tarefas WHERE id = %s', (id,))
+    tarefa = cur.fetchone()
+    cur.close()
     conn.close()
     return jsonify({'sucesso': True, 'tarefa': dict(tarefa)})
 
@@ -342,31 +380,38 @@ def api_atualizar_tarefa(id):
 def api_deletar_tarefa(id):
     """Remove uma tarefa via JSON."""
     conn = get_db()
-    tarefa = conn.execute(
-        'SELECT id FROM tarefas WHERE id = ? AND usuario_id = ?',
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT id FROM tarefas WHERE id = %s AND usuario_id = %s',
         (id, session['usuario_id'])
-    ).fetchone()
+    )
+    tarefa = cur.fetchone()
     if not tarefa:
+        cur.close()
         conn.close()
-        return jsonify({'sucesso': False, 'mensagem': 'Tarefa não encontrada.'}), 404
-    conn.execute('DELETE FROM tarefas WHERE id = ?', (id,))
+        return jsonify({'sucesso': False, 'mensagem': 'Tarefa nao encontrada.'}), 404
+    cur.execute('DELETE FROM tarefas WHERE id = %s', (id,))
     conn.commit()
+    cur.close()
     conn.close()
     return jsonify({'sucesso': True, 'mensagem': 'Tarefa removida com sucesso.'})
 
-# ─── API REST — Progresso (item 10, Chart.js) ─────────────────────────────────
+# --- API REST - Progresso (Chart.js) ---
 
 @app.route('/api/progresso', methods=['GET'])
 @login_required
 def api_progresso():
-    """Retorna contagem de tarefas por status para o gráfico."""
+    """Retorna contagem de tarefas por status para o grafico."""
     conn = get_db()
-    rows = conn.execute(
+    cur = conn.cursor()
+    cur.execute(
         """SELECT status, COUNT(*) as total
-           FROM tarefas WHERE usuario_id = ?
+           FROM tarefas WHERE usuario_id = %s
            GROUP BY status""",
         (session['usuario_id'],)
-    ).fetchall()
+    )
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
 
     dados = {'pendente': 0, 'em_andamento': 0, 'concluida': 0}
@@ -375,17 +420,20 @@ def api_progresso():
             dados[row['status']] = row['total']
     return jsonify(dados)
 
-# ─── Página de Progresso — Dashboard Visual (item 10) ────────────────────────
+# --- Pagina de Progresso - Dashboard Visual ---
 
 @app.route('/progresso')
 @login_required
 def progresso():
-    """Página com gráficos de progresso das tarefas."""
+    """Pagina com graficos de progresso das tarefas."""
     conn = get_db()
-    tarefas = conn.execute(
-        'SELECT * FROM tarefas WHERE usuario_id = ?',
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT * FROM tarefas WHERE usuario_id = %s',
         (session['usuario_id'],)
-    ).fetchall()
+    )
+    tarefas = cur.fetchall()
+    cur.close()
     conn.close()
 
     total = len(tarefas)
@@ -395,18 +443,16 @@ def progresso():
     pct = round((concluidas / total * 100) if total > 0 else 0)
 
     return render_template('progresso.html',
-                           total=total,
-                           pendentes=pendentes,
-                           em_andamento=em_andamento,
-                           concluidas=concluidas,
-                           pct=pct)
+        total=total,
+        pendentes=pendentes,
+        em_andamento=em_andamento,
+        concluidas=concluidas,
+        pct=pct)
 
-# ─── Inicialização ────────────────────────────────────────────────────────────
+# --- Inicializacao ---
 
 if __name__ == '__main__':
     init_db()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-# ─── Segurança (item 7) ───────────────────────────────────────────────────────
-# SECRET_KEY já configurada. DEBUG=False em produção via variável de ambiente.
-# Uso: FLASK_DEBUG=0 python app.py
-
+else:
+    init_db()
