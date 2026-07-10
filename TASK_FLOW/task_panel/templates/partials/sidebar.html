@@ -1,0 +1,45 @@
+{% from 'macros.html' import icon %}
+
+<aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+    <a class="brand" href="{{ url_for('dashboard') }}">
+        <span class="brand__mark">{{ icon('check-all') }}</span>
+        <span class="brand__word">Task<b>Flow</b></span>
+    </a>
+
+    <nav class="nav" aria-label="Seções">
+        <p class="nav__section eyebrow">Trabalho</p>
+
+        <a class="nav__link" href="{{ url_for('dashboard') }}" data-tip="Painel"
+           {% if request.endpoint == 'dashboard' %}aria-current="page"{% endif %}>
+            {{ icon('grid') }}<span class="nav__label">Painel</span>
+        </a>
+
+        <a class="nav__link" href="{{ url_for('nova_tarefa') }}" data-tip="Nova tarefa"
+           {% if request.endpoint == 'nova_tarefa' %}aria-current="page"{% endif %}>
+            {{ icon('plus') }}<span class="nav__label">Nova tarefa</span>
+        </a>
+
+        <a class="nav__link" href="{{ url_for('progresso') }}" data-tip="Progresso"
+           {% if request.endpoint == 'progresso' %}aria-current="page"{% endif %}>
+            {{ icon('chart') }}<span class="nav__label">Progresso</span>
+        </a>
+    </nav>
+
+    <div class="sidebar__foot">
+        <button type="button" class="icon-btn collapse-btn" id="btn-colapsar"
+                aria-expanded="true" aria-controls="sidebar" aria-label="Recolher menu">
+            {{ icon('chevron-left') }}
+        </button>
+
+        <div class="user">
+            <span class="user__avatar" aria-hidden="true">{{ iniciais }}</span>
+            <span class="user__meta">
+                <span class="user__name">{{ primeiro_nome }}</span>
+                <span class="user__role">Conta pessoal</span>
+            </span>
+            <a class="icon-btn icon-btn--danger" href="{{ url_for('logout') }}" aria-label="Sair da conta">
+                {{ icon('logout') }}
+            </a>
+        </div>
+    </div>
+</aside>

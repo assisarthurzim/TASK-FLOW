@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, field %}
+{% block title %}Entrar — Task Flow{% endblock %}
+
+{% block content %}
+<form class="auth__form reveal" method="POST">
+    <div class="auth__form-head">
+        <h1>Bem-vindo de volta</h1>
+        <p>Entre para continuar de onde parou.</p>
+    </div>
+
+    {{ field('email', 'E-mail', type='email', placeholder='voce@email.com',
+             leading='mail', required=True, autocomplete='email') }}
+
+    {{ field('senha', 'Senha', type='password', placeholder='••••••••',
+             leading='lock', required=True, autocomplete='current-password') }}
+
+    <button type="submit" class="btn btn--primary btn--block btn--lg" data-submit>
+        {{ icon('login') }} Entrar
+    </button>
+
+    <p class="auth__alt">Ainda não tem conta? <a href="{{ url_for('registro') }}">Criar conta gratuita</a></p>
+</form>
+{% endblock %}

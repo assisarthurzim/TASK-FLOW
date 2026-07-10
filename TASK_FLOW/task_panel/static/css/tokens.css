@@ -1,0 +1,177 @@
+/* ==========================================================================
+   TaskPanel — 01. Tokens
+   Única fonte de verdade para cor, tipo, espaço, raio, sombra e tempo.
+   Nenhuma regra visual deve usar valor literal fora deste arquivo.
+   ========================================================================== */
+
+:root {
+    /* ─── Tipografia ─────────────────────────────────────────────────── */
+    --font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+    --fs-micro: 0.6875rem; /* 11px — eyebrows, kbd */
+    --fs-xs: 0.75rem;      /* 12px — meta, legendas */
+    --fs-sm: 0.8125rem;    /* 13px — labels, botões */
+    --fs-base: 0.9375rem;  /* 15px — corpo */
+    --fs-md: 1.0625rem;    /* 17px */
+    --fs-lg: 1.3125rem;    /* 21px — título de seção */
+    --fs-xl: 1.625rem;     /* 26px — título de página */
+    --fs-2xl: 2.125rem;    /* 34px — display */
+
+    --lh-tight: 1.15;
+    --lh-snug: 1.35;
+    --lh-body: 1.6;
+
+    --tracking-eyebrow: 0.09em;
+    --tracking-display: -0.02em;
+
+    /* ─── Espaçamento (escala de 4) ──────────────────────────────────── */
+    --sp-1: 0.25rem;
+    --sp-2: 0.5rem;
+    --sp-3: 0.75rem;
+    --sp-4: 1rem;
+    --sp-5: 1.25rem;
+    --sp-6: 1.5rem;
+    --sp-8: 2rem;
+    --sp-10: 2.5rem;
+    --sp-14: 3.5rem;
+
+    /* ─── Raio ───────────────────────────────────────────────────────── */
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-pill: 999px;
+
+    /* ─── Estrutura ──────────────────────────────────────────────────── */
+    --topbar-h: 64px;
+    --sidebar-w: 248px;
+    --sidebar-w-collapsed: 76px;
+    --content-max: 1180px;
+
+    /* ─── Movimento ──────────────────────────────────────────────────── */
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --t-fast: 120ms;
+    --t-base: 200ms;
+    --t-slow: 380ms;
+
+    /* Peso do traço dos ícones — definido por tema (ver abaixo). */
+    --icon-size: 1.1875em;
+
+    --z-scrim: 40;
+    --z-sidebar: 50;
+    --z-topbar: 45;
+    --z-toast: 90;
+    --z-dialog: 100;
+}
+
+/* ─── Tema escuro (padrão da identidade) ─────────────────────────────── */
+[data-theme='dark'] {
+    color-scheme: dark;
+
+    /* Traço claro sobre fundo escuro floresce opticamente: pede menos peso. */
+    --icon-stroke: 1.9;
+
+    --bg: #06080c;
+    --bg-grid: rgba(120, 160, 220, 0.045);
+    --surface: #0c1017;
+    --surface-2: #11161f;
+    --surface-3: #161d28;
+    --border: #1d2632;
+    --border-strong: #2a3645;
+
+    --text: #e7edf5;
+    --text-2: #a7b4c4;
+    --muted: #6e7d90;
+
+    --accent: #2f7ff6;
+    --accent-hi: #63a6ff;
+    --accent-deep: #10387f;
+    /* Superfícies sólidas onde texto branco pousa: contraste ≥ 4.5:1. */
+    --accent-solid: #2264cc;
+    --accent-solid-hi: #2a72e0;
+    --accent-soft: rgba(47, 127, 246, 0.14);
+    --accent-glow: rgba(47, 127, 246, 0.4);
+    --on-accent: #ffffff;
+
+    --idle: #7a8aa0;
+    --idle-soft: rgba(122, 138, 160, 0.16);
+    --active: #2f7ff6;
+    --active-soft: rgba(47, 127, 246, 0.16);
+    --done: #21b99a;
+    --done-soft: rgba(33, 185, 154, 0.16);
+    --danger: #f2695f;
+    --danger-soft: rgba(242, 105, 95, 0.14);
+    --danger-solid: #cf4438;
+    --warn: #e0a33a;
+
+    /* Ícone em repouso, em foco e sobre superfície acentuada. */
+    --icon: #93a3b7;
+    --icon-strong: #dbe4ef;
+
+    --hairline: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    --sh-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --sh-2: 0 8px 24px -10px rgba(0, 0, 0, 0.7);
+    --sh-3: 0 32px 70px -28px rgba(0, 0, 0, 0.85);
+    --sh-ring: 0 0 0 3px rgba(47, 127, 246, 0.28);
+
+    --skeleton: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
+}
+
+/* ─── Tema claro ─────────────────────────────────────────────────────── */
+[data-theme='light'] {
+    color-scheme: light;
+
+    /* Traço escuro sobre fundo claro afina opticamente: pede mais peso. */
+    --icon-stroke: 2.15;
+
+    /* Fundo mais fundo que a superfície: o cartão branco passa a flutuar. */
+    --bg: #eaeff7;
+    --bg-grid: rgba(23, 55, 102, 0.075);
+    --surface: #ffffff;
+    --surface-2: #f5f8fc;
+    --surface-3: #e6ecf5;
+    --border: #d4dde9;
+    --border-strong: #a9b8cc;
+
+    --text: #0a0f18;
+    --text-2: #34425a;
+    --muted: #59687f;
+
+    --accent: #1558d6;
+    --accent-hi: #2f7ff6;
+    --accent-deep: #0b2e6b;
+    --accent-solid: #1a5fc7;
+    --accent-solid-hi: #1d6be0;
+    --accent-soft: rgba(21, 88, 214, 0.11);
+    --accent-glow: rgba(21, 88, 214, 0.3);
+    --on-accent: #ffffff;
+
+    --icon: #4c5c74;
+    --icon-strong: #0a0f18;
+
+    --idle: #4f6076;
+    --idle-soft: rgba(79, 96, 118, 0.13);
+    --active: #1558d6;
+    --active-soft: rgba(21, 88, 214, 0.12);
+    --done: #0a8069;
+    --done-soft: rgba(10, 128, 105, 0.13);
+    --danger: #cf3a2d;
+    --danger-soft: rgba(207, 58, 45, 0.11);
+    --danger-solid: #b8342a;
+    --warn: #9a6605;
+
+    --hairline: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    --sh-1: 0 1px 2px rgba(13, 30, 60, 0.07), 0 1px 1px rgba(13, 30, 60, 0.04);
+    --sh-2: 0 10px 28px -12px rgba(13, 30, 60, 0.24), 0 2px 6px -2px rgba(13, 30, 60, 0.08);
+    --sh-3: 0 36px 80px -30px rgba(13, 30, 60, 0.4), 0 8px 20px -8px rgba(13, 30, 60, 0.12);
+    --sh-ring: 0 0 0 3px rgba(21, 88, 214, 0.26);
+
+    --skeleton: linear-gradient(90deg, var(--surface-3) 0%, var(--surface) 50%, var(--surface-3) 100%);
+}
+
+/* Mapeia status → cor. Usado por card, switch, gráfico e legenda. */
+[data-status='pendente'] { --status: var(--idle); --status-soft: var(--idle-soft); }
+[data-status='em_andamento'] { --status: var(--active); --status-soft: var(--active-soft); }
+[data-status='concluida'] { --status: var(--done); --status-soft: var(--done-soft); }

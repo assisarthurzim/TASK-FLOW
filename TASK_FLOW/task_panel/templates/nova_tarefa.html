@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, field %}
+{% block title %}Nova tarefa — Task Flow{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <form class="card form-card reveal" method="POST">
+        <div class="form-card__head">
+            {{ icon('plus', 'icon--lg') }}
+            <div>
+                <h1>Nova tarefa</h1>
+                <p>Ela entra como pendente e você muda o status quando quiser.</p>
+            </div>
+        </div>
+
+        {{ field('titulo', 'Título', placeholder='Ex.: Revisar proposta comercial', leading='text', required=True) }}
+
+        <div class="field">
+            <label class="field__label" for="f-descricao">
+                Descrição <span class="field__hint">opcional</span>
+            </label>
+            <textarea class="textarea" id="f-descricao" name="descricao" rows="4"
+                      placeholder="Contexto, links ou o que define a tarefa como concluída."></textarea>
+        </div>
+
+        <div class="form-actions">
+            <a class="btn btn--ghost" href="{{ url_for('dashboard') }}">Cancelar</a>
+            <button type="submit" class="btn btn--primary" data-submit>{{ icon('save') }} Salvar tarefa</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

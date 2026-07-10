@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, stat %}
+{% block title %}Progresso — Task Flow{% endblock %}
+
+{% block content %}
+
+<div class="page-head reveal">
+    <h1>Progresso</h1>
+    <p>Como suas tarefas estão distribuídas e o quanto já saiu do papel.</p>
+</div>
+
+<section class="stats-grid" aria-label="Resumo das tarefas">
+    {{ stat('Total', total, 'list', index=1) }}
+    {{ stat('Pendentes', pendentes, 'hourglass', status='pendente', index=2) }}
+    {{ stat('Em andamento', em_andamento, 'loop', status='em_andamento', index=3) }}
+    {{ stat('Concluídas', concluidas, 'check-circle', status='concluida', index=4) }}
+</section>
+
+<section class="progress reveal" style="--i: 5" aria-label="Progresso geral">
+    <div class="progress__head">
+        <div>
+            <span class="eyebrow">Progresso geral</span>
+            <p>{{ concluidas }} de {{ total }} tarefa(s) concluída(s)</p>
+        </div>
+        <span class="progress__pct">{{ pct }}%</span>
+    </div>
+
+    <div class="progress__track" role="progressbar" aria-valuenow="{{ pct }}" aria-valuemin="0"
+         aria-valuemax="100" aria-label="Tarefas concluídas">
+        <div class="progress__fill" style="width: {{ pct }}%"></div>
+    </div>
+
+    <div class="legend">
+        <span class="legend__item" data-status="pendente">
+            <span class="legend__dot"></span>Pendentes <span class="legend__val">{{ pendentes }}</span>
+        </span>
+        <span class="legend__item" data-status="em_andamento">
+            <span class="legend__dot"></span>Em andamento <span class="legend__val">{{ em_andamento }}</span>
+        </span>
+        <span class="legend__item" data-status="concluida">
+            <span class="legend__dot"></span>Concluídas <span class="legend__val">{{ concluidas }}</span>
+        </span>
+    </div>
+</section>
+
+{% if total > 0 %}
+<section class="charts-grid reveal" style="--i: 6">
+    <article class="chart-card">
+        <div class="chart-card__head">
+            {{ icon('pie') }}
+            <div>
+                <h2>Distribuição por status</h2>
+                <p>Proporção do total</p>
+            </div>
+        </div>
+        <div class="chart-card__body" data-loading="true">
+            <div class="skeleton skeleton--chart"></div>
+            <canvas id="grafico-pizza" aria-label="Gráfico de rosca com a distribuição das tarefas por status"></canvas>
+        </div>
+    </article>
+
+    <article class="chart-card">
+        <div class="chart-card__head">
+            {{ icon('bars') }}
+            <div>
+                <h2>Quantidade por status</h2>
+                <p>Comparativo absoluto</p>
+            </div>
+        </div>
+        <div class="chart-card__body" data-loading="true">
+            <div class="skeleton skeleton--chart"></div>
+            <canvas id="grafico-barras" aria-label="Gráfico de barras com a quantidade de tarefas por status"></canvas>
+        </div>
+    </article>
+</section>
+
+<script id="dados-progresso" type="application/json">
+    {{ {'pendente': pendentes, 'em_andamento': em_andamento, 'concluida': concluidas}|tojson }}
+</script>
+
+{% else %}
+
+<div class="empty reveal" style="--i: 6">
+    <div class="empty__icon">{{ icon('chart', 'icon--lg') }}</div>
+    <h2>Ainda não há o que medir</h2>
+    <p>Crie sua primeira tarefa e os gráficos aparecem aqui automaticamente.</p>
+    <a class="btn btn--primary" href="{{ url_for('nova_tarefa') }}">{{ icon('plus') }} Criar tarefa</a>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block scripts %}
+{% if total > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endif %}
+{% endblock %}

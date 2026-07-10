@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, field %}
+{% block title %}Editar tarefa — Task Flow{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <form class="card form-card reveal" method="POST">
+        <div class="form-card__head">
+            {{ icon('pencil', 'icon--lg') }}
+            <div>
+                <h1>Editar tarefa</h1>
+                <p>As mudanças valem assim que você salvar.</p>
+            </div>
+        </div>
+
+        {{ field('titulo', 'Título', value=tarefa.titulo, leading='text', required=True) }}
+
+        <div class="field">
+            <label class="field__label" for="f-descricao">
+                Descrição <span class="field__hint">opcional</span>
+            </label>
+            <textarea class="textarea" id="f-descricao" name="descricao" rows="4"
+                      placeholder="Contexto, links ou o que define a tarefa como concluída.">{{ tarefa.descricao or '' }}</textarea>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="f-status">Status</label>
+            <select class="select" id="f-status" name="status">
+                <option value="pendente" {% if tarefa.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                <option value="em_andamento" {% if tarefa.status == 'em_andamento' %}selected{% endif %}>Em andamento</option>
+                <option value="concluida" {% if tarefa.status == 'concluida' %}selected{% endif %}>Concluída</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <a class="btn btn--ghost" href="{{ url_for('dashboard') }}">Cancelar</a>
+            <button type="submit" class="btn btn--primary" data-submit>{{ icon('save') }} Salvar alterações</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% from 'macros.html' import icon %}
+{#
+  Layout raiz. Decide entre dois shells a partir do endpoint:
+  · autenticação → painel de marca + formulário
+  · aplicação    → sidebar colapsável + topbar
+#}
+{% set is_auth = request.endpoint in ('login', 'registro') %}
+{% set titulos = {
+    'dashboard': 'Painel',
+    'nova_tarefa': 'Nova tarefa',
+    'editar_tarefa': 'Editar tarefa',
+    'progresso': 'Progresso'
+} %}
+{% set titulo_pagina = titulos.get(request.endpoint, 'TaskPanel') %}
+{% set nome_completo = (session.usuario_nome or 'Usuário')|trim %}
+{% set partes = nome_completo.split() or ['Usuário'] %}
+{% set primeiro_nome = partes[0] %}
+{% set iniciais = (partes[0][0] ~ (partes[-1][0] if partes|length > 1 else ''))|upper %}
+
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="TaskPanel — organize suas tarefas e acompanhe seu progresso.">
+    <title>{% block title %}Task Flow{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
+
+    {# Aplica tema e estado da sidebar antes da primeira pintura: sem flash. #}
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('tp-tema');
+                if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', t);
+                var s = localStorage.getItem('tp-sidebar');
+                if (s) document.documentElement.setAttribute('data-sidebar', s);
+            } catch (e) { /* localStorage indisponível: mantém o padrão */ }
+        })();
+    </script>
+</head>
+<body>
+{% include 'partials/icons.html' %}
+
+{% if is_auth %}
+    <main class="auth">
+        <section class="auth__panel">
+            <div class="brand">
+                <span class="brand__mark">{{ icon('check-all') }}</span>
+                <span class="brand__word">Task<b>Flow</b></span>
+            </div>
+
+            <div class="auth__pitch">
+                <h1>Suas tarefas, do rascunho ao concluído.</h1>
+                <p>Um painel só seu para registrar o que precisa ser feito e ver o quanto já andou.</p>
+                <ul class="auth__list">
+                    <li>{{ icon('check') }} Mude o status em um clique</li>
+                    <li>{{ icon('check') }} Busque e filtre sem recarregar</li>
+                    <li>{{ icon('check') }} Acompanhe o progresso em gráficos</li>
+                </ul>
+            </div>
+
+            <div class="auth__demo">
+                <span class="eyebrow">Tarefa</span>
+                <span class="auth__demo-title">Revisar proposta comercial</span>
+                <div class="auth__demo-switch">
+                    <span>Pendente</span><span>Andamento</span><span data-on>Concluída</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="auth__form-side">
+            <div class="auth__topbar">{% include 'partials/theme_toggle.html' %}</div>
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+{% else %}
+    <a class="sr-only skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+    <div class="shell">
+        {% include 'partials/sidebar.html' %}
+        <div class="scrim" id="scrim"></div>
+
+        <div class="main">
+            {% include 'partials/topbar.html' %}
+
+            <main class="content" id="conteudo">
+                {{ self.content() }}
+            </main>
+
+            <footer class="foot">
+                <span>TaskFlow — Flask &amp; SQLite</span>
+                <span>Atalhos: <kbd class="kbd">/</kbd> buscar · <kbd class="kbd">n</kbd> nova tarefa</span>
+            </footer>
+        </div>
+    </div>
+{% endif %}
+
+{# Mensagens do servidor entram já renderizadas: aparecem mesmo sem JS. #}
+<div class="toasts" id="toasts" role="status" aria-live="polite">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            {% set icones = {'success': 'check-circle', 'danger': 'x-circle', 'warning': 'alert', 'info': 'info'} %}
+            <div class="toast toast--{{ category }}">
+                {{ icon(icones.get(category, 'info')) }}
+                <span class="toast__msg">{{ message }}</span>
+                <button type="button" class="toast__close" aria-label="Dispensar">{{ icon('x') }}</button>
+            </div>
+        {% endfor %}
+    {% endwith %}
+</div>
+
+<dialog class="dialog" id="dialogo-confirmar" aria-labelledby="dlg-titulo">
+    <div class="dialog__body">
+        <h2 id="dlg-titulo">Excluir tarefa</h2>
+        <p>A tarefa <b data-dlg-alvo></b> será removida em definitivo. Não há como desfazer.</p>
+    </div>
+    <div class="dialog__foot">
+        <button type="button" class="btn btn--ghost" data-dlg-cancelar>Manter tarefa</button>
+        <a class="btn btn--danger" data-dlg-confirmar href="#">Excluir</a>
+    </div>
+</dialog>
+
+<script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

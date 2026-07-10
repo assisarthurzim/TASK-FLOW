@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, stat, task_card %}
+{% block title %}Painel — Task Flow{% endblock %}
+
+{% block content %}
+
+<div class="page-head reveal">
+    <h1>Olá, {{ primeiro_nome }}</h1>
+    <p>Este é o resumo das suas tarefas de hoje.</p>
+</div>
+
+<section class="tip reveal" style="--i: 1" aria-label="Dica do dia">
+    <span class="tip__icon">{{ icon('bolt') }}</span>
+    <div class="tip__body">
+        <span class="eyebrow">Dica do dia</span>
+        <p class="tip__text">{{ dica }}</p>
+    </div>
+</section>
+
+<section class="stats-grid" aria-label="Resumo das tarefas">
+    {{ stat('Total', total, 'list', id='stat-total', index=2) }}
+    {{ stat('Pendentes', pendentes, 'hourglass', status='pendente', id='stat-pendente', index=3) }}
+    {{ stat('Em andamento', em_andamento, 'loop', status='em_andamento', id='stat-andamento', index=4) }}
+    {{ stat('Concluídas', concluidas, 'check-circle', status='concluida', id='stat-concluida', index=5) }}
+</section>
+
+{% if tarefas %}
+<div class="toolbar reveal" style="--i: 6">
+    <div class="search">
+        {{ icon('search') }}
+        <input class="search__input" id="campo-busca" type="search" autocomplete="off"
+               placeholder="Buscar por título, descrição ou status" aria-label="Buscar tarefas">
+        <kbd class="kbd search__kbd">/</kbd>
+    </div>
+
+    <div class="toolbar__right">
+        <div class="chips" id="filtros" role="group" aria-label="Filtrar por status">
+            <button type="button" class="chip" data-filtro="todos" aria-pressed="true">Todas</button>
+            <button type="button" class="chip" data-filtro="pendente" data-status="pendente" aria-pressed="false">
+                <span class="chip__dot"></span>Pendentes
+            </button>
+            <button type="button" class="chip" data-filtro="em_andamento" data-status="em_andamento" aria-pressed="false">
+                <span class="chip__dot"></span>Em andamento
+            </button>
+            <button type="button" class="chip" data-filtro="concluida" data-status="concluida" aria-pressed="false">
+                <span class="chip__dot"></span>Concluídas
+            </button>
+        </div>
+
+        <div class="segmented view-toggle" id="troca-visao" role="group" aria-label="Modo de exibição">
+            <button type="button" class="segmented__btn" data-visao="cards" aria-pressed="true" aria-label="Ver em cartões">{{ icon('cards') }}</button>
+            <button type="button" class="segmented__btn" data-visao="lista" aria-pressed="false" aria-label="Ver em lista">{{ icon('rows') }}</button>
+        </div>
+    </div>
+</div>
+
+<div class="section-head">
+    <div>
+        <h2>Minhas tarefas</h2>
+        <p>Toque em um status para mudá-lo — a alteração é salva na hora.</p>
+    </div>
+    <a class="btn btn--primary" href="{{ url_for('nova_tarefa') }}">{{ icon('plus') }} Nova tarefa</a>
+</div>
+
+<section class="tarefas" id="tarefas" data-view="cards">
+    <div class="tarefas__head" aria-hidden="true">
+        <span>Tarefa</span><span>Status</span><span>Ações</span>
+    </div>
+
+    <div class="tarefas__grid" id="tarefas-grid">
+        {% for t in tarefas %}{{ task_card(t, loop.index0) }}{% endfor %}
+    </div>
+</section>
+
+<div class="empty" id="vazio-busca" hidden>
+    <div class="empty__icon">{{ icon('search', 'icon--lg') }}</div>
+    <h2>Nenhuma tarefa corresponde</h2>
+    <p>Ajuste a busca ou escolha outro filtro para ver mais resultados.</p>
+    <button type="button" class="btn btn--ghost" id="limpar-busca">Limpar busca e filtros</button>
+</div>
+
+{% else %}
+
+<div class="empty reveal">
+    <div class="empty__icon">{{ icon('inbox', 'icon--lg') }}</div>
+    <h2>Nenhuma tarefa por aqui</h2>
+    <p>Crie a primeira tarefa e ela aparece neste painel, com status e progresso.</p>
+    <a class="btn btn--primary" href="{{ url_for('nova_tarefa') }}">{{ icon('plus') }} Criar tarefa</a>
+</div>
+
+{% endif %}
+
+{% endblock %}

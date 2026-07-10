@@ -1,0 +1,276 @@
+/* ==========================================================================
+   TaskPanel — 05. Páginas
+   Composições que só existem em um contexto. Tudo o mais mora em componentes.
+   ========================================================================== */
+
+/* ─── Grades das páginas ─────────────────────────────────────────────── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-6);
+}
+.charts-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: var(--sp-4);
+    align-items: stretch;
+}
+@media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .charts-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ─── Dashboard · Dica do dia ────────────────────────────────────────── */
+.tip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-5);
+    margin-bottom: var(--sp-6);
+    overflow: hidden;
+    background: linear-gradient(100deg, var(--accent-soft), transparent 55%), var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1), var(--hairline);
+}
+.tip__icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex: none;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: var(--r-md);
+}
+.tip__body { min-width: 0; }
+.tip__text {
+    margin-top: 2px;
+    font-size: var(--fs-base);
+    font-weight: 500;
+    color: var(--text);
+    line-height: var(--lh-snug);
+}
+
+/* ─── Dashboard · Barra de ferramentas ───────────────────────────────── */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    padding: var(--sp-3);
+    margin-bottom: var(--sp-5);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1), var(--hairline);
+}
+.toolbar__right { display: flex; align-items: center; gap: var(--sp-3); margin-left: auto; }
+
+@media (max-width: 720px) {
+    .toolbar { align-items: stretch; }
+    .toolbar__right { margin-left: 0; justify-content: space-between; width: 100%; }
+    .chips { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+}
+
+/* ─── Dashboard · Coleção de tarefas ─────────────────────────────────── */
+.tarefas__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--sp-4);
+}
+.tarefas__head { display: none; }
+
+/* Visão lista: mesma marcação, leitura tabular — cabeçalho fixo e zebra. */
+.tarefas[data-view='lista'] .tarefas__grid {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
+    border-top: 0;
+    overflow: hidden;
+    background: var(--surface);
+}
+
+.tarefas[data-view='lista'] .tarefas__head {
+    position: sticky;
+    top: var(--topbar-h);
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px 84px;
+    gap: var(--sp-4);
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.tarefas__head span:last-child { text-align: right; }
+.tarefas__head span {
+    font-family: var(--font-mono);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.tarefas[data-view='lista'] .task {
+    grid-template-columns: minmax(0, 1fr) 300px 84px;
+    grid-template-areas: 'main foot actions';
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-3) var(--sp-4);
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+}
+.tarefas[data-view='lista'] .task:last-child { border-bottom: 0; }
+.tarefas[data-view='lista'] .task:hover { background: var(--surface-3); box-shadow: none; }
+.tarefas[data-view='lista'] .task--par { background: var(--surface-2); }
+.tarefas[data-view='lista'] .task--par:hover { background: var(--surface-3); }
+.tarefas[data-view='lista'] .task__desc { -webkit-line-clamp: 1; }
+.tarefas[data-view='lista'] .task__title { font-size: var(--fs-base); }
+.tarefas[data-view='lista'] .task__actions { opacity: 1; transform: none; justify-content: flex-end; }
+
+/* Abaixo de 900px a lista não cabe: volta a ser cartão, sempre. */
+@media (max-width: 900px) {
+    .tarefas[data-view='lista'] .tarefas__head { display: none; }
+    .tarefas[data-view='lista'] .tarefas__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--sp-4);
+        background: none;
+        border: 0;
+        overflow: visible;
+    }
+    .tarefas[data-view='lista'] .task {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: 'main actions' 'foot foot';
+        align-items: start;
+        padding: var(--sp-4) var(--sp-4) var(--sp-3);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        box-shadow: var(--sh-1), var(--hairline);
+    }
+    .tarefas[data-view='lista'] .task__desc { -webkit-line-clamp: 3; }
+    .view-toggle { display: none; }
+}
+
+/* ─── Progresso · Barra geral ────────────────────────────────────────── */
+.progress {
+    display: grid;
+    gap: var(--sp-4);
+    padding: var(--sp-5);
+    margin-bottom: var(--sp-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1), var(--hairline);
+}
+.progress__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); }
+.progress__head p { font-size: var(--fs-sm); }
+.progress__pct {
+    font-family: var(--font-mono);
+    font-size: var(--fs-2xl);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+.progress__track {
+    position: relative;
+    height: 10px;
+    overflow: hidden;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: var(--r-pill);
+}
+.progress__fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-deep), var(--accent) 45%, var(--accent-hi));
+    border-radius: var(--r-pill);
+    box-shadow: 0 0 16px -2px var(--accent-glow);
+    transform-origin: left;
+    animation: grow var(--t-slow) var(--ease-out) backwards;
+}
+@keyframes grow { from { transform: scaleX(0); } to { transform: none; } }
+
+.legend { display: flex; flex-wrap: wrap; gap: var(--sp-5); }
+.legend__item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: var(--fs-xs);
+    color: var(--text-2);
+}
+.legend__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--status);
+    box-shadow: 0 0 8px var(--status);
+}
+.legend__val { font-family: var(--font-mono); font-weight: 600; color: var(--text); }
+
+/* ─── Progresso · Cartões de gráfico ─────────────────────────────────── */
+.chart-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    padding: var(--sp-5);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1), var(--hairline);
+}
+.chart-card__head { display: flex; align-items: center; gap: var(--sp-3); }
+.chart-card__head .icon { color: var(--accent); }
+.chart-card__head h2 { font-size: var(--fs-base); }
+.chart-card__head p { font-size: var(--fs-xs); color: var(--muted); }
+.chart-card__body { position: relative; flex: 1; min-height: 260px; }
+.chart-card__body canvas { position: absolute; inset: 0; }
+.chart-card__body[data-loading='true'] canvas { visibility: hidden; }
+.chart-card__body:not([data-loading='true']) .skeleton--chart { display: none; }
+.chart-fallback { padding: var(--sp-8) 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); }
+
+/* ─── Formulários (nova / editar tarefa) ─────────────────────────────── */
+.form-page { max-width: 620px; margin-inline: auto; }
+.form-card { padding: var(--sp-6); }
+.form-card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding-bottom: var(--sp-5);
+    margin-bottom: var(--sp-5);
+    border-bottom: 1px solid var(--border);
+}
+.form-card__head .icon {
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: var(--r-md);
+    box-sizing: content-box;
+    padding: 9px;
+}
+.form-card__head h1 { font-size: var(--fs-md); }
+.form-card__head p { font-size: var(--fs-xs); color: var(--muted); }
+
+.form-actions {
+    display: flex;
+    gap: var(--sp-3);
+    padding-top: var(--sp-5);
+    margin-top: var(--sp-5);
+    border-top: 1px solid var(--border);
+}
+.form-actions .btn { flex: 1; }
+
+@media (max-width: 480px) {
+    .form-card { padding: var(--sp-4); }
+    .form-actions { flex-direction: column-reverse; }
+}

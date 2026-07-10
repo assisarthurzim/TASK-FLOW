@@ -1,0 +1,85 @@
+{# ==========================================================================
+   Macros — a camada de componentes do lado do servidor.
+   Cada peça repetida do sistema mora aqui e em nenhum outro lugar.
+   ========================================================================== #}
+
+{% macro icon(name, cls='') -%}
+<svg class="icon {{ cls }}" aria-hidden="true" focusable="false"><use href="#i-{{ name }}"></use></svg>
+{%- endmacro %}
+
+
+{# Campo de formulário com rótulo, ícone opcional e dica. #}
+{% macro field(name, label, type='text', value='', placeholder='', leading=None, required=False, hint=None, autocomplete=None) -%}
+<div class="field">
+    <label class="field__label" for="f-{{ name }}">
+        {{ label }}
+        {%- if required %}<span class="field__req" aria-hidden="true">*</span>
+        {%- elif hint %}<span class="field__hint">{{ hint }}</span>{% endif %}
+    </label>
+    <div class="control">
+        {% if leading %}{{ icon(leading) }}{% endif %}
+        <input class="input" id="f-{{ name }}" name="{{ name }}" type="{{ type }}"
+               value="{{ value }}" placeholder="{{ placeholder }}"
+               {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+               {% if required %}required{% endif %}>
+    </div>
+</div>
+{%- endmacro %}
+
+
+{# Cartão de métrica. `status` colore o ícone e o brilho via token. #}
+{% macro stat(label, value, icon_name, status=None, id=None, index=0) -%}
+<article class="stat reveal" {% if status %}data-status="{{ status }}"{% endif %} style="--i: {{ index }}">
+    <div class="stat__icon">{{ icon(icon_name) }}</div>
+    <div>
+        <div class="stat__num" {% if id %}id="{{ id }}"{% endif %}>{{ value }}</div>
+        <div class="stat__label">{{ label }}</div>
+    </div>
+</article>
+{%- endmacro %}
+
+
+{# ASSINATURA — Status Switch.
+   Três estados, um clique. Radiogroup real: navegável por setas e legível
+   por leitor de tela. O polegar desliza para o slot correspondente. #}
+{% macro status_switch(tarefa) -%}
+{% set slots = {'pendente': 0, 'em_andamento': 1, 'concluida': 2} %}
+{% set rotulos = [('pendente', 'Pendente'), ('em_andamento', 'Andamento'), ('concluida', 'Concluída')] %}
+<div class="status-switch" role="radiogroup" data-id="{{ tarefa.id }}"
+     aria-label="Status de {{ tarefa.titulo }}" style="--slot: {{ slots.get(tarefa.status, 0) }}">
+    <span class="status-switch__thumb" aria-hidden="true"></span>
+    {% for valor, rotulo in rotulos %}
+    <button type="button" role="radio" class="status-switch__opt" data-value="{{ valor }}"
+            aria-checked="{{ 'true' if tarefa.status == valor else 'false' }}"
+            tabindex="{{ '0' if tarefa.status == valor else '-1' }}">{{ rotulo }}</button>
+    {% endfor %}
+</div>
+{%- endmacro %}
+
+
+{# Card de tarefa. Serve às visões "cartões" e "lista" sem duplicar marcação. #}
+{% macro task_card(tarefa, index=0) -%}
+<article class="task reveal" style="--i: {{ index }}"
+         data-id="{{ tarefa.id }}"
+         data-status="{{ tarefa.status }}"
+         data-titulo="{{ tarefa.titulo|lower }}"
+         data-desc="{{ (tarefa.descricao or '')|lower }}">
+    <div class="task__main">
+        <h3 class="task__title">{{ tarefa.titulo }}</h3>
+        {% if tarefa.descricao %}<p class="task__desc">{{ tarefa.descricao }}</p>{% endif %}
+    </div>
+
+    <div class="task__actions">
+        <a class="icon-btn" href="{{ url_for('editar_tarefa', id=tarefa.id) }}"
+           aria-label="Editar tarefa {{ tarefa.titulo }}">{{ icon('pencil') }}</a>
+        <a class="icon-btn icon-btn--danger" href="{{ url_for('deletar_tarefa', id=tarefa.id) }}"
+           data-confirm="{{ tarefa.titulo }}"
+           aria-label="Excluir tarefa {{ tarefa.titulo }}">{{ icon('trash') }}</a>
+    </div>
+
+    <div class="task__foot">
+        {{ status_switch(tarefa) }}
+        <span class="task__ack" hidden aria-hidden="true">{{ icon('check') }}</span>
+    </div>
+</article>
+{%- endmacro %}

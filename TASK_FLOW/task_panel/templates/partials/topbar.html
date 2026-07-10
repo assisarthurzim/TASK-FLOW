@@ -1,0 +1,14 @@
+{% from 'macros.html' import icon %}
+
+<header class="topbar">
+    <button type="button" class="icon-btn topbar__burger" id="btn-gaveta"
+            aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menu">
+        {{ icon('menu') }}
+    </button>
+
+    <h1 class="topbar__title">{{ titulo_pagina }}</h1>
+
+    <div class="topbar__tools">
+        {% include 'partials/theme_toggle.html' %}
+    </div>
+</header>

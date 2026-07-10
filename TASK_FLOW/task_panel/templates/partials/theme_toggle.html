@@ -1,0 +1,8 @@
+{% from 'macros.html' import icon %}
+
+{# O ícone visível é decidido por CSS a partir de [data-theme] no <html>,
+   então nunca há troca piscando depois que o JS carrega. #}
+<button type="button" class="icon-btn theme-toggle" id="btn-tema" aria-label="Alternar tema">
+    <span class="theme-toggle__face" data-theme-face="dark">{{ icon('sun') }}</span>
+    <span class="theme-toggle__face" data-theme-face="light">{{ icon('moon') }}</span>
+</button>
