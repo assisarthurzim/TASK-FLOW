@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import sqlite3
+import os
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -404,8 +405,7 @@ def progresso():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
-
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 # ─── Segurança (item 7) ───────────────────────────────────────────────────────
 # SECRET_KEY já configurada. DEBUG=False em produção via variável de ambiente.
 # Uso: FLASK_DEBUG=0 python app.py
